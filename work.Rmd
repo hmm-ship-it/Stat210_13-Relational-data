@@ -1,0 +1,127 @@
+---
+title: "R Notebook"
+output: github_document
+---
+
+Mutating joins, add new variables to one data frame from matching observations in another.
+
+Filtering joins, filter observations from one data frame based on whether or not they match an observation in the other table.
+
+Set operations treat observations as if they were set elements.
+
+```{r}
+library(tidyverse)
+library(nycflights13)
+library(Lahman)
+library(babynames)
+library(nasaweather)
+library(fueleconomy)
+library(ggplot2)
+```
+
+Exercises:
+
+1.You would only need the flights table, with the origin and destination variables
+2. The airports table and weather table can be merged by matching origin
+3.It would align with the destinations of flights
+4. Year, Month, Day, Hour, #_of_People. The keys would be time data.
+
+Primary key identifies its own table, foreign key uniquely identifies and observation in another table
+
+If a table contains multiple values that are the same....it isn't a KEY!!!
+you can check
+
+planes %>%
+  count(tailnum) %>%
+  filter( n> 1)
+  
+If a table doesn't seem to hold unique values anywhere, you can add your own key in. Use mutate() and row_number()
+
+Exercises
+```{r}
+flights %>%
+  mutate(flight_id = row_number()) %>%
+  glimpse()
+
+Batting %>%
+  count(playerID, yearID, stint) %>%
+  filter( n > 1)
+
+babynames %>%
+  count(year,sex, name)%>%
+  filter(n > 1)
+
+nasaweather::atmos %>%
+ count(lat, long, year, month) %>%
+  filter(n > 1)
+  #Filter(n>1)
+
+vehicles %>%
+  count(id) %>%
+  filter(n>1)
+```
+player id, year id, and stint
+
+```{r}
+flights2 <- flights %>%
+  select(year:day, hour, origin, dest, tailnum, carrier)
+#view(flights2)
+flights2 %>%
+  select(-origin, -dest)%>%
+  left_join(airlines, by = "carrier")
+
+x <- tribble(
+  ~key, ~val_x,
+  1, "x1",
+  2, "x2",
+  3, "x3"
+)
+
+y <- tribble(
+   ~key, ~val_y,
+  1, "y1",
+  2, "y2",
+  4, "y3"
+)
+
+x %>%
+  inner_join(y, by ="key")
+
+
+```
+
+inner join - matches observations whenever their keys are equal
+outer join - Keeps observations that appear in both tables in at least 1 of the tables
+  left join - keeps all in x of (x & y)
+  right join - keeps all in y of (x & y)
+  full join - keeps all observations in x and y
+
+
+If there are duplicate keys, the result will be the cartiasian product of the results.
+
+when joining by null the result is all variables that appear in both tables
+if there are same named tables, but they mean different things specify by "value" and it will be added as a separate column
+
+A named character vector e.g. "by = c("a" = "b"). This will match variable a in table x to variable b in table y. The variables from x will be used in the output. This means if you are trying to match destations of flights to a table with airpots and latitude and longitude you match by = c("dest" = "faa")
+
+```{r}
+flights %>%
+  group_by(dest) %>%
+  summarise(avg_delay = mean(arr_delay, na.rm = TRUE))%>%
+  left_join(airports, by = c("dest" = "faa"))
+  ggplot(aes(lon, lat, color = avg_delay)) +
+  borders("state")+
+  geom_point()+
+  coord_quickmap()
+```
+
+```{r}
+flights %>%
+  left_join(airports, by = c("dest" = "faa"))
+```
+
+```{r}
+
+```
+
+
